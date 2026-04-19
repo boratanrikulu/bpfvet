@@ -9,9 +9,16 @@ Works on compiled ELF, not source code. Language-agnostic - C, Rust, Go, Zig all
 ## Quick start
 
 ```bash
+# Pre-built binary (Linux amd64)
+curl -L https://github.com/boratanrikulu/bpfvet/releases/latest/download/bpfvet-linux-amd64 -o bpfvet
+chmod +x bpfvet
+./bpfvet program.bpf.o
+
+# Or via go install
 go install github.com/boratanrikulu/bpfvet/cmd/bpfvet@latest
-bpfvet program.bpf.o
 ```
+
+Pre-built binaries for all platforms: [releases](https://github.com/boratanrikulu/bpfvet/releases).
 
 ## Example output
 
