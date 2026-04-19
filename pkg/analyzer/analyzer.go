@@ -114,29 +114,63 @@ func AnalyzeSpec(spec *ebpf.CollectionSpec) (*report.Report, error) {
 	})
 
 	rpt.DataFlow = detectDataFlow(rpt.Maps, helpersSeen)
+	rpt.MinKernel = maxVersion
+	rpt.Warnings = append(rpt.Warnings, checkDeprecatedHelpers(helpersSeen, maxVersion)...)
 
-	// Warn about bpf_probe_read + kernel pointers only when there's evidence
-	// of non-CO-RE access. Programs that use CO-RE properly may still use
-	// bpf_probe_read for non-kernel reads (user buffers, etc).
-	if helpersSeen[asm.FnProbeRead] {
-		hasKernelDirect := false
-		for _, p := range rpt.Programs {
-			if p.MemoryAccesses.KernelDirect > 0 {
-				hasKernelDirect = true
-				break
-			}
-		}
-		if hasKernelDirect {
-			rpt.Warnings = append(rpt.Warnings, report.Warning{
+	return &rpt, nil
+}
+
+func checkDeprecatedHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.KernelVersion) []report.Warning {
+	var warnings []report.Warning
+
+	// bpf_probe_read / bpf_probe_read_str (4.1) -> kernel/user variants (5.5)
+	usesOld := helpers[asm.FnProbeRead] || helpers[asm.FnProbeReadStr]
+	usesModern := helpers[asm.FnProbeReadKernel] || helpers[asm.FnProbeReadUser] ||
+		helpers[asm.FnProbeReadKernelStr] || helpers[asm.FnProbeReadUserStr]
+
+	if usesOld {
+		if usesModern {
+			warnings = append(warnings, report.Warning{
 				Severity: report.SeverityWarning,
-				Message:  "bpf_probe_read used with non-CO-RE kernel struct accesses",
-				Detail:   "Use BPF_CORE_READ() or bpf_probe_read_kernel() with CO-RE-aware field access",
+				Message:  "bpf_probe_read/bpf_probe_read_str are deprecated, migrate remaining calls to kernel/user variants",
+				Detail:   "Program already uses the modern variants but still has deprecated calls",
+			})
+		} else if !minKernel.Less(version.V(5, 5)) {
+			warnings = append(warnings, report.Warning{
+				Severity: report.SeverityWarning,
+				Message:  "bpf_probe_read/bpf_probe_read_str are deprecated on 5.5+, use bpf_probe_read_kernel or bpf_probe_read_user",
 			})
 		}
 	}
 
-	rpt.MinKernel = maxVersion
-	return &rpt, nil
+	// bpf_perf_event_read (4.8) -> bpf_perf_event_read_value (4.15)
+	if helpers[asm.FnPerfEventRead] {
+		if helpers[asm.FnPerfEventReadValue] {
+			warnings = append(warnings, report.Warning{
+				Severity: report.SeverityWarning,
+				Message:  "bpf_perf_event_read is superseded by bpf_perf_event_read_value, migrate remaining calls",
+			})
+		} else if !minKernel.Less(version.V(4, 15)) {
+			warnings = append(warnings, report.Warning{
+				Severity: report.SeverityWarning,
+				Message:  "bpf_perf_event_read is superseded, use bpf_perf_event_read_value (4.15+)",
+				Detail:   "Old helper has ABI issues where error and counter value ranges overlap",
+			})
+		}
+	}
+
+	// bpf_get_current_task (4.8) -> bpf_get_current_task_btf (5.11)
+	if helpers[asm.FnGetCurrentTask] && !helpers[asm.FnGetCurrentTaskBtf] {
+		if !minKernel.Less(version.V(5, 11)) {
+			warnings = append(warnings, report.Warning{
+				Severity: report.SeverityWarning,
+				Message:  "consider bpf_get_current_task_btf (5.11+) for direct CO-RE field access",
+				Detail:   "BTF variant returns a typed pointer, no BPF_CORE_READ needed",
+			})
+		}
+	}
+
+	return warnings
 }
 
 func detectDataFlow(maps []report.MapInfo, helpers map[asm.BuiltinFunc]bool) []string {

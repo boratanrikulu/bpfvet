@@ -113,20 +113,18 @@ func TestE2E_MultiProg(t *testing.T) {
 }
 
 // TestE2E_ProbeReadBad tests bpf_probe_read with non-CO-RE kernel struct access.
+// TestE2E_ProbeReadBad tests bpf_probe_read with direct kernel struct access.
+// Min kernel is 4.8 (< 5.5), so no deprecated warning - only KERNEL-DIRECT error.
 func TestE2E_ProbeReadBad(t *testing.T) {
 	r := analyzeFixture(t, "testdata/probe_read_bad.bpf.o")
 
 	assertHasError(t, r, "probe_read_bad")
 
-	// Should have the bpf_probe_read warning too.
-	hasProbeReadWarn := false
+	// No deprecated warning because min kernel < 5.5 (bpf_probe_read is the right choice)
 	for _, w := range r.Warnings {
 		if w.Severity == report.SeverityWarning {
-			hasProbeReadWarn = true
+			t.Errorf("unexpected warning: %s", w.Message)
 		}
-	}
-	if !hasProbeReadWarn {
-		t.Error("expected bpf_probe_read warning")
 	}
 
 	assertDataFlowContains(t, r, "PerfEventArray")
