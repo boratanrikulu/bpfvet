@@ -33,7 +33,7 @@ type Report struct {
 	License         string                `json:"license"`
 	HasBTF          bool                  `json:"hasBTF"`
 	CORERelocations int                   `json:"coreRelocations"`
-	DataFlow        []string              `json:"dataFlow"`
+	Transport       []string              `json:"transport"`
 	Programs        []ProgramReport       `json:"programs"`
 	Maps            []MapInfo             `json:"maps"`
 	Helpers         []HelperRequirement   `json:"helpers"`
@@ -99,8 +99,8 @@ func WriteText(w io.Writer, r *Report, verbose bool) error {
 		fmt.Fprintln(w, "BTF: yes, CO-RE relocations: 0 (vmlinux.h may not be used)")
 	}
 
-	if len(r.DataFlow) > 0 {
-		fmt.Fprintf(w, "Data flow: %s\n", joinSlice(r.DataFlow))
+	if len(r.Transport) > 0 {
+		fmt.Fprintf(w, "Transport: %s\n", joinSlice(r.Transport))
 	}
 
 	fmt.Fprintln(w)

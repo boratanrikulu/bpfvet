@@ -113,19 +113,20 @@ func AnalyzeSpec(spec *ebpf.CollectionSpec) (*report.Report, error) {
 		return rpt.ProgTypes[j].Version.Less(rpt.ProgTypes[i].Version)
 	})
 
-	rpt.DataFlow = detectDataFlow(rpt.Maps, helpersSeen)
+	rpt.Transport = detectTransport(rpt.Maps, helpersSeen)
 	rpt.MinKernel = maxVersion
-	rpt.Warnings = append(rpt.Warnings, checkDeprecatedHelpers(helpersSeen, maxVersion)...)
+	rpt.Warnings = append(rpt.Warnings, checkSupersededHelpers(helpersSeen, maxVersion)...)
 
 	return &rpt, nil
 }
 
 // Sourced from https://man7.org/linux/man-pages/man7/bpf-helpers.7.html
 // and https://docs.kernel.org/bpf/helpers.html
-func checkDeprecatedHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.KernelVersion) []report.Warning {
+func checkSupersededHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.KernelVersion) []report.Warning {
 	var warnings []report.Warning
 
 	// bpf_probe_read / bpf_probe_read_str (4.1) -> kernel/user variants (5.5)
+	// Not deprecated, but the newer helpers distinguish kernel vs user address space.
 	usesOld := helpers[asm.FnProbeRead] || helpers[asm.FnProbeReadStr]
 	usesModern := helpers[asm.FnProbeReadKernel] || helpers[asm.FnProbeReadUser] ||
 		helpers[asm.FnProbeReadKernelStr] || helpers[asm.FnProbeReadUserStr]
@@ -134,13 +135,14 @@ func checkDeprecatedHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.
 		if usesModern {
 			warnings = append(warnings, report.Warning{
 				Severity: report.SeverityWarning,
-				Message:  "bpf_probe_read/bpf_probe_read_str are deprecated, migrate remaining calls to kernel/user variants",
-				Detail:   "Program already uses the modern variants but still has deprecated calls",
+				Message:  "prefer bpf_probe_read_kernel/bpf_probe_read_user over bpf_probe_read",
+				Detail:   "Program already uses the newer variants but still has bpf_probe_read calls",
 			})
 		} else if !minKernel.Less(version.V(5, 5)) {
 			warnings = append(warnings, report.Warning{
 				Severity: report.SeverityWarning,
-				Message:  "bpf_probe_read/bpf_probe_read_str are deprecated on 5.5+, use bpf_probe_read_kernel or bpf_probe_read_user",
+				Message:  "prefer bpf_probe_read_kernel/bpf_probe_read_user over bpf_probe_read (available since 5.5)",
+				Detail:   "Newer helpers distinguish kernel vs user address space for safety",
 			})
 		}
 	}
@@ -150,12 +152,13 @@ func checkDeprecatedHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.
 		if helpers[asm.FnPerfEventReadValue] {
 			warnings = append(warnings, report.Warning{
 				Severity: report.SeverityWarning,
-				Message:  "bpf_perf_event_read is superseded by bpf_perf_event_read_value, migrate remaining calls",
+				Message:  "prefer bpf_perf_event_read_value over bpf_perf_event_read",
+				Detail:   "Old helper has ABI issues where error and counter value ranges overlap",
 			})
 		} else if !minKernel.Less(version.V(4, 15)) {
 			warnings = append(warnings, report.Warning{
 				Severity: report.SeverityWarning,
-				Message:  "bpf_perf_event_read is superseded, use bpf_perf_event_read_value (4.15+)",
+				Message:  "prefer bpf_perf_event_read_value over bpf_perf_event_read (available since 4.15)",
 				Detail:   "Old helper has ABI issues where error and counter value ranges overlap",
 			})
 		}
@@ -166,7 +169,7 @@ func checkDeprecatedHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.
 		if !minKernel.Less(version.V(5, 11)) {
 			warnings = append(warnings, report.Warning{
 				Severity: report.SeverityWarning,
-				Message:  "consider bpf_get_current_task_btf (5.11+) for direct CO-RE field access",
+				Message:  "consider bpf_get_current_task_btf over bpf_get_current_task (available since 5.11)",
 				Detail:   "BTF variant returns a typed pointer, no BPF_CORE_READ needed",
 			})
 		}
@@ -175,7 +178,7 @@ func checkDeprecatedHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.
 	return warnings
 }
 
-func detectDataFlow(maps []report.MapInfo, helpers map[asm.BuiltinFunc]bool) []string {
+func detectTransport(maps []report.MapInfo, helpers map[asm.BuiltinFunc]bool) []string {
 	var flows []string
 
 	hasPerf := false

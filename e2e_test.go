@@ -26,7 +26,7 @@ func TestE2E_GoodCORE(t *testing.T) {
 	if r.Programs[0].MemoryAccesses.KernelDirect != 0 {
 		t.Errorf("expected 0 KERNEL-DIRECT, got %d", r.Programs[0].MemoryAccesses.KernelDirect)
 	}
-	assertDataFlowContains(t, r, "RingBuf")
+	assertTransportContains(t, r, "RingBuf")
 	assertValidJSON(t, r)
 }
 
@@ -41,7 +41,7 @@ func TestE2E_DirectKernelAccess(t *testing.T) {
 	if r.Programs[0].MemoryAccesses.KernelDirect != 1 {
 		t.Errorf("expected 1 KERNEL-DIRECT, got %d", r.Programs[0].MemoryAccesses.KernelDirect)
 	}
-	assertDataFlowContains(t, r, "RingBuf")
+	assertTransportContains(t, r, "RingBuf")
 }
 
 // TestE2E_MixedAccess tests a program with both CO-RE and non-CO-RE accesses.
@@ -72,7 +72,7 @@ func TestE2E_MapOnly(t *testing.T) {
 	if r.Programs[0].MemoryAccesses.KernelDirect != 0 {
 		t.Errorf("expected 0 KERNEL-DIRECT, got %d", r.Programs[0].MemoryAccesses.KernelDirect)
 	}
-	assertDataFlowContains(t, r, "shared state via maps")
+	assertTransportContains(t, r, "shared state via maps")
 
 	if r.MinKernel.String() != "4.7" {
 		t.Errorf("min kernel = %s, want 4.7", r.MinKernel)
@@ -109,7 +109,7 @@ func TestE2E_MultiProg(t *testing.T) {
 	}
 
 	assertHasError(t, r, "bad_prog")
-	assertDataFlowContains(t, r, "PerfEventArray")
+	assertTransportContains(t, r, "PerfEventArray")
 }
 
 // TestE2E_ProbeReadBad tests bpf_probe_read with non-CO-RE kernel struct access.
@@ -127,7 +127,7 @@ func TestE2E_ProbeReadBad(t *testing.T) {
 		}
 	}
 
-	assertDataFlowContains(t, r, "PerfEventArray")
+	assertTransportContains(t, r, "PerfEventArray")
 }
 
 // TestE2E_NestedVmlinux verifies that nested pointer access via vmlinux.h
@@ -161,7 +161,7 @@ func TestE2E_JSONStructure(t *testing.T) {
 		HasBTF          bool   `json:"hasBTF"`
 		CORERelocations int    `json:"coreRelocations"`
 		MinKernel       string `json:"minKernel"`
-		DataFlow        []string `json:"dataFlow"`
+		Transport []string `json:"transport"`
 		Programs        []struct {
 			Name           string `json:"name"`
 			MemoryAccesses struct {
@@ -191,8 +191,8 @@ func TestE2E_JSONStructure(t *testing.T) {
 	if doc.MinKernel == "" {
 		t.Error("minKernel is empty")
 	}
-	if len(doc.DataFlow) == 0 {
-		t.Error("dataFlow is empty")
+	if len(doc.Transport) == 0 {
+		t.Error("transport is empty")
 	}
 	if len(doc.Programs) == 0 {
 		t.Error("programs is empty")
@@ -232,14 +232,14 @@ func assertHasError(t *testing.T, r *report.Report, progName string) {
 	t.Errorf("expected ERROR warning for program %s", progName)
 }
 
-func assertDataFlowContains(t *testing.T, r *report.Report, substr string) {
+func assertTransportContains(t *testing.T, r *report.Report, substr string) {
 	t.Helper()
-	for _, flow := range r.DataFlow {
+	for _, flow := range r.Transport {
 		if contains(flow, substr) {
 			return
 		}
 	}
-	t.Errorf("expected data flow containing %q, got %v", substr, r.DataFlow)
+	t.Errorf("expected data flow containing %q, got %v", substr, r.Transport)
 }
 
 func contains(s, sub string) bool {

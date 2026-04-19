@@ -28,7 +28,7 @@ $ bpfvet program.bpf.o
 Minimum kernel: 5.8
 License: GPL
 BTF: yes, CO-RE relocations: 2 (vmlinux.h likely used)
-Data flow: kernel -> userspace via RingBuf
+Transport: kernel -> userspace via RingBuf
 
 Kernel Requirements:
   bpf_ringbuf_output     -> 5.8+
@@ -96,7 +96,7 @@ Programs:
 - **Program types** - kprobe (4.1+), sock_ops (4.13+), LSM (5.7+), etc.
 - **Map types** - RingBuf (5.8+), LRUHash (4.10+), PerfEventArray (4.3+), etc.
 - **BTF and CO-RE** - BTF presence, CO-RE relocation count, vmlinux.h usage hint
-- **Data flow** - how the program ships data to userspace (PerfEventArray, RingBuf, shared maps)
+- **Transport** - how the program ships data to userspace (PerfEventArray, RingBuf, shared maps)
 - **Memory access classification** - CO-RE protected, context, map-value, kernel-direct, uncategorized
 - **License** - extracted from the BPF object
 
@@ -136,7 +136,7 @@ make build
 - [x] Minimum kernel version from helpers, program types, map types
 - [x] CO-RE relocation counting and memory access classification
 - [x] BTF presence detection with vmlinux.h hint
-- [x] Data flow detection (PerfEventArray, RingBuf, maps)
+- [x] Transport detection (PerfEventArray, RingBuf, maps)
 - [x] Non-CO-RE kernel struct access detection
 - [x] Source line mapping via BTF
 - [x] License reporting
