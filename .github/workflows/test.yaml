@@ -1,0 +1,31 @@
+name: Test
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test -race -timeout 60s ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build -o bin/bpfvet ./cmd/bpfvet
+
+      - name: Smoke test
+        run: |
+          ./bin/bpfvet testdata/direct_access.bpf.o
+          ./bin/bpfvet testdata/good_core.bpf.o
+          ./bin/bpfvet testdata/mixed_access.bpf.o
+          ./bin/bpfvet testdata/*.bpf.o
