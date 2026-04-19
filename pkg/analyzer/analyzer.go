@@ -120,6 +120,8 @@ func AnalyzeSpec(spec *ebpf.CollectionSpec) (*report.Report, error) {
 	return &rpt, nil
 }
 
+// Sourced from https://man7.org/linux/man-pages/man7/bpf-helpers.7.html
+// and https://docs.kernel.org/bpf/helpers.html
 func checkDeprecatedHelpers(helpers map[asm.BuiltinFunc]bool, minKernel version.KernelVersion) []report.Warning {
 	var warnings []report.Warning
 
