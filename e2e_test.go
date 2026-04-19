@@ -26,7 +26,7 @@ func TestE2E_GoodCORE(t *testing.T) {
 	if r.Programs[0].MemoryAccesses.KernelDirect != 0 {
 		t.Errorf("expected 0 KERNEL-DIRECT, got %d", r.Programs[0].MemoryAccesses.KernelDirect)
 	}
-	assertTransportContains(t, r, "RingBuf")
+	assertTransportContains(t, r, "event streaming via RingBuf")
 	assertValidJSON(t, r)
 }
 
@@ -41,7 +41,7 @@ func TestE2E_DirectKernelAccess(t *testing.T) {
 	if r.Programs[0].MemoryAccesses.KernelDirect != 1 {
 		t.Errorf("expected 1 KERNEL-DIRECT, got %d", r.Programs[0].MemoryAccesses.KernelDirect)
 	}
-	assertTransportContains(t, r, "RingBuf")
+	assertTransportContains(t, r, "event streaming via RingBuf")
 }
 
 // TestE2E_MixedAccess tests a program with both CO-RE and non-CO-RE accesses.
@@ -109,7 +109,7 @@ func TestE2E_MultiProg(t *testing.T) {
 	}
 
 	assertHasError(t, r, "bad_prog")
-	assertTransportContains(t, r, "PerfEventArray")
+	assertTransportContains(t, r, "event streaming via PerfEventArray")
 }
 
 // TestE2E_ProbeReadBad tests bpf_probe_read with non-CO-RE kernel struct access.
@@ -127,7 +127,7 @@ func TestE2E_ProbeReadBad(t *testing.T) {
 		}
 	}
 
-	assertTransportContains(t, r, "PerfEventArray")
+	assertTransportContains(t, r, "event streaming via PerfEventArray")
 }
 
 // TestE2E_NestedVmlinux verifies that nested pointer access via vmlinux.h

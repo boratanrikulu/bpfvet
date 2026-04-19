@@ -28,7 +28,7 @@ $ bpfvet program.bpf.o
 Minimum kernel: 5.8
 License: GPL
 BTF: yes, CO-RE relocations: 2 (vmlinux.h likely used)
-Transport: kernel -> userspace via RingBuf
+Transport: event streaming via RingBuf
 
 Kernel Requirements:
   bpf_ringbuf_output     -> 5.8+

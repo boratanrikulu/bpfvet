@@ -200,10 +200,10 @@ func detectTransport(maps []report.MapInfo, helpers map[asm.BuiltinFunc]bool) []
 	}
 
 	if hasRingBuf {
-		flows = append(flows, "kernel -> userspace via RingBuf")
+		flows = append(flows, "event streaming via RingBuf")
 	}
 	if hasPerf {
-		flows = append(flows, "kernel -> userspace via PerfEventArray")
+		flows = append(flows, "event streaming via PerfEventArray")
 	}
 	if hasDataMaps {
 		flows = append(flows, "shared state via maps")
