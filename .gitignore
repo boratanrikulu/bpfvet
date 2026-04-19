@@ -1,0 +1,6 @@
+bin/
+work/
+.claude/
+CLAUDE.md
+docs/AGENTS.md
+testdata/src/vmlinux.h
