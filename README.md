@@ -135,7 +135,7 @@ make build
 - [x] License reporting
 - [x] JSON output for CI
 - [x] Multi-file analysis with summary
-- [ ] Deprecated helper warnings (`bpf_probe_read` -> `bpf_probe_read_kernel`)
+- [x] Deprecated helper warnings (`bpf_probe_read`, `bpf_perf_event_read`, `bpf_get_current_task`)
 - [ ] License + GPL-only helper cross-check
 - [ ] Exit with error when issues found (for CI)
 - [ ] GitHub Action
