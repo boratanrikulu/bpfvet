@@ -50,14 +50,6 @@ Analyze multiple variants side by side. Useful for projects that compile differe
 ```
 $ bpfvet *.bpf.o
 
-==> good_core.bpf.o <==
-Minimum kernel: 5.8
-...
-
-==> map_only.bpf.o <==
-Minimum kernel: 4.7
-...
-
 =============================
 Summary
 =============================
@@ -65,6 +57,14 @@ Summary
   map_only.bpf.o                           4.7+
 
 Minimum kernel version (all files): 5.8
+
+==> good_core.bpf.o <==
+Minimum kernel: 5.8
+...
+
+==> map_only.bpf.o <==
+Minimum kernel: 4.7
+...
 ```
 
 ## Portability warnings
