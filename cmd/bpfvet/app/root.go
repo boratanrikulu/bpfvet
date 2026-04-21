@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/boratanrikulu/bpfvet/pkg/analyzer"
 	"github.com/boratanrikulu/bpfvet/pkg/report"
@@ -52,12 +51,27 @@ func run(cmd *cobra.Command, args []string) error {
 
 	multi := len(results) > 1
 
+	if multi && !jsonOutput {
+		fmt.Fprintln(os.Stdout, "=============================")
+		fmt.Fprintln(os.Stdout, "Summary")
+		fmt.Fprintln(os.Stdout, "=============================")
+		overallMax := version.V(0, 0)
+		for _, res := range results {
+			v := res.report.MinKernel
+			fmt.Fprintf(os.Stdout, "  %-40s %s+\n", res.file, v)
+			if overallMax.Less(v) {
+				overallMax = v
+			}
+		}
+		fmt.Fprintf(os.Stdout, "\nMinimum kernel version (all files): %s\n", overallMax)
+	}
+
 	for i, res := range results {
 		if multi {
 			if i > 0 {
 				fmt.Fprintln(os.Stdout)
 			}
-			fmt.Fprintf(os.Stdout, "==> %s <==\n\n", filepath.Base(res.file))
+			fmt.Fprintf(os.Stdout, "\n==> %s <==\n\n", res.file)
 		}
 
 		if jsonOutput {
@@ -69,22 +83,6 @@ func run(cmd *cobra.Command, args []string) error {
 				return err
 			}
 		}
-	}
-
-	if multi && !jsonOutput {
-		fmt.Fprintln(os.Stdout)
-		fmt.Fprintln(os.Stdout, "=============================")
-		fmt.Fprintln(os.Stdout, "Summary")
-		fmt.Fprintln(os.Stdout, "=============================")
-		overallMax := version.V(0, 0)
-		for _, res := range results {
-			v := res.report.MinKernel
-			fmt.Fprintf(os.Stdout, "  %-40s %s+\n", filepath.Base(res.file), v)
-			if overallMax.Less(v) {
-				overallMax = v
-			}
-		}
-		fmt.Fprintf(os.Stdout, "\nMinimum kernel version (all files): %s\n", overallMax)
 	}
 
 	return nil
